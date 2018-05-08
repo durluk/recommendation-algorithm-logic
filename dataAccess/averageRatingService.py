@@ -1,29 +1,49 @@
 from sqlalchemy import create_engine, MetaData, Table, func
-from sqlalchemy.orm import mapper, sessionmaker
+from sqlalchemy.orm import mapper, sessionmaker, clear_mappers
 
 from dataAccess.connect import connect
-from dataAccess.entities import Management, AverageMovieRating
+from dataAccess.entities import AverageMovieRating, Management
 
 
 class Ratings(object):
     pass
 
 
-def loadSession():
+class Movies(object):
+    pass
+
+
+def load_session():
     """"""
     engine = create_engine('postgresql+psycopg2://', creator=connect)
 
     metadata = MetaData(engine)
+
     moz_ratings = Table('ratings', metadata, autoload=True)
     mapper(Ratings, moz_ratings)
+
+    moz_movies = Table('movies', metadata, autoload=True)
+    mapper(Movies, moz_movies)
 
     Session = sessionmaker(bind=engine)
     session = Session()
     return session
 
 
+def get_top_scored_movies(number_of_movies):
+    top_scored_movies = []
+    session = load_session()
+    top_scores = session.query(AverageMovieRating).order_by(AverageMovieRating.averageRating.desc()).limit(
+        number_of_movies)
+
+    for instance in top_scores:
+        movie = session.query(Movies).filter(Movies.movieId == instance.movieId).first()
+        top_scored_movies.append(movie)
+    return top_scored_movies
+
+
 if __name__ == "__main__":
-    session = loadSession()
+    session = load_session()
 
     # calculate average rating from table ratings
     globalAverageRating = session.query(Ratings).value(func.avg(Ratings.rating))

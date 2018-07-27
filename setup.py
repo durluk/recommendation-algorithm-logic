@@ -10,5 +10,5 @@ with open('LICENSE') as f:
 
 setup(
 
-)
+install_requires=['sqlalchemy', 'scipy', 'numpy'])
 

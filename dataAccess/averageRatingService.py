@@ -19,6 +19,10 @@ def get_top_scored_movies(number_of_movies):
 
 def calculate_average_rating():
     session = Session()
+
+    number_of_movies_to_process = session.query(Movies).value(func.max(Movies.movie_id))
+    processed_movie = 1
+
     global_average_rating = calculate_and_save_global_average_rating()
     minimum_number_of_ratings = get_parameter("minimum_number_of_ratings_for_average").value
     for i in session.query(Ratings.movie_id).distinct():
@@ -35,7 +39,9 @@ def calculate_average_rating():
                 func.avg(Ratings.rating))
         rounded_average_movie_rating_value = round(average_movie_rating_value, 2)
         save_or_update_average_movie_rating(i.movie_id, rounded_average_movie_rating_value, session)
-    session.commit()
+        print("Processed movie: ", processed_movie, " from: ", number_of_movies_to_process)
+        processed_movie += 1
+        session.commit()
 
 
 def save_or_update_average_movie_rating(movie_id, rounded_average_movie_rating_value, session):

@@ -28,7 +28,9 @@ def calculate_average_rating():
     minimum_number_of_ratings = get_parameter("minimum_number_of_ratings_for_average").value
     for i in movies:
         number_of_ratings = session.query(Ratings).filter(Ratings.movie_id == i.movie_id).value(func.count(Ratings.rating))
-        if number_of_ratings < minimum_number_of_ratings:
+        if number_of_ratings == 0:
+            continue
+        elif number_of_ratings < minimum_number_of_ratings:
             sum_of_movie_rating_from_db = session.query(Ratings).filter(Ratings.movie_id == i.movie_id).value(
                 func.sum(Ratings.rating))
             average_movie_rating_value = (sum_of_movie_rating_from_db

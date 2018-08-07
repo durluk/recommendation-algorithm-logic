@@ -21,6 +21,8 @@ def calculate_users_similarity():
     session = Session()
     # check how many movies there are, so you could know how big the comparision vector will be
     number_of_movies = session.query(Movies).value(func.count(Movies.movie_id))
+    number_of_users_to_process = session.query(User).value(func.max(User.id))
+    processed_user = 1
 
     users_in_users_table = session.query(User).all()
     list_of_users_ids_from_user_table = np.array(list(user.id for user in users_in_users_table))
@@ -50,6 +52,8 @@ def calculate_users_similarity():
                             users_similarity = UsersSimilarity(x, y, similarity)
                             session.add(users_similarity)
                         session.commit()
+        print("Processed user: ", processed_user, " from: ", number_of_users_to_process)
+        processed_user += 1
 
 
 if __name__ == "__main__":

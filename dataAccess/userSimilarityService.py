@@ -20,12 +20,12 @@ def calculate_normalized_rating_vector(user_ratings, number_of_movies):
 def calculate_users_similarity():
     session = Session()
     # check how many movies there are, so you could know how big the comparision vector will be
-    number_of_movies = session.query(Movies).value(func.count(Movies.movie_id))
+    number_of_movies = session.query(Movies).count()
     number_of_users_to_process = session.query(User).count()
     processed_user = 1
 
     users_in_users_table = session.query(User).all()
-    list_of_users_ids_from_user_table = np.array(list(user.id for user in users_in_users_table))
+    list_of_users_ids_from_user_table = np.array(list(int(user.id) for user in users_in_users_table))
 
     unique_users_in_ratings_table = session.query(Ratings.user_id).distinct()
     list_of_users_ids_from_ratings_table = np.array(list(rating.user_id for rating in unique_users_in_ratings_table))
@@ -52,7 +52,7 @@ def calculate_users_similarity():
                             users_similarity = UsersSimilarity(x, y, similarity)
                             session.add(users_similarity)
                         session.commit()
-        print("Processed user: ", processed_user, " from: ", number_of_users_to_process)
+        print("Processed user: ", processed_user, " from: ", int(number_of_users_to_process))
         processed_user += 1
 
 

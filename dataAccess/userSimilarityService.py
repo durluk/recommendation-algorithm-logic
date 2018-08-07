@@ -21,7 +21,7 @@ def calculate_users_similarity():
     session = Session()
     # check how many movies there are, so you could know how big the comparision vector will be
     number_of_movies = session.query(Movies).value(func.count(Movies.movie_id))
-    number_of_users_to_process = session.query(User).value(func.max(User.id))
+    number_of_users_to_process = session.query(User).count()
     processed_user = 1
 
     users_in_users_table = session.query(User).all()

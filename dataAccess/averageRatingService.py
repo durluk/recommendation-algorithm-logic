@@ -1,6 +1,6 @@
-from sqlalchemy import func
+from sqlalchemy import func, sql
 
-from dataAccess import Session, Movies, Ratings
+from dataAccess import Session, Movies, Ratings, engine
 from dataAccess.entities import AverageMovieRating
 from dataAccess.managementService import calculate_and_save_global_average_rating, get_parameter
 
@@ -20,14 +20,14 @@ def get_top_scored_movies(number_of_movies):
 def calculate_average_rating():
     session = Session()
 
-    number_of_movies_to_process = session.query(Movies).value(func.max(Movies.movie_id))
+    movies = session.query(Movies)
+    number_of_movies_to_process = movies.count()
     processed_movie = 1
 
     global_average_rating = calculate_and_save_global_average_rating()
     minimum_number_of_ratings = get_parameter("minimum_number_of_ratings_for_average").value
-    for i in session.query(Ratings.movie_id).distinct():
-        number_of_ratings = session.query(Ratings).filter(Ratings.movie_id == i.movie_id).value(
-            func.count(Ratings.rating))
+    for i in movies:
+        number_of_ratings = session.query(Ratings).filter(Ratings.movie_id == i.movie_id).value(func.count(Ratings.rating))
         if number_of_ratings < minimum_number_of_ratings:
             sum_of_movie_rating_from_db = session.query(Ratings).filter(Ratings.movie_id == i.movie_id).value(
                 func.sum(Ratings.rating))
@@ -39,7 +39,7 @@ def calculate_average_rating():
                 func.avg(Ratings.rating))
         rounded_average_movie_rating_value = round(average_movie_rating_value, 2)
         save_or_update_average_movie_rating(i.movie_id, rounded_average_movie_rating_value, session)
-        print("Processed movie: ", processed_movie, " from: ", number_of_movies_to_process)
+        print("Processed: ", processed_movie, " from: ", str(number_of_movies_to_process), " - movie_id: ", i.movie_id)
         processed_movie += 1
         session.commit()
 

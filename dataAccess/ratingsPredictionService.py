@@ -9,17 +9,17 @@ def calculate_predicted_ratings_based_on_user_similarity():
     session = Session()
     list_of_users_similarity = session.query(UsersSimilarity).all()
     number_of_users_for_prediction_calculation = session.query(Movies).value(
-        func.count(distinct(UsersSimilarity.userId)))
+        func.count(distinct(UsersSimilarity.user_id)))
     number_of_users_with_calculated_similarity = session.query(Movies).value(
-        func.count(distinct(UsersSimilarity.compareUserId)))
+        func.count(distinct(UsersSimilarity.compare_user_id)))
     user_user_similarity_matrix = create_user_to_user_similarity_matrix(list_of_users_similarity,
                                                                         number_of_users_for_prediction_calculation,
                                                                         number_of_users_with_calculated_similarity)
     # print(user_user_similarity_matrix)
-    highest_existing_movie_id = session.query(Movies).value(func.max(Movies.movieId))
+    highest_existing_movie_id = session.query(Movies).value(func.max(Movies.movie_id))
     movie_id = 1
     while True:
-        list_of_users_ratings = session.query(Ratings).filter(Ratings.movieId == movie_id).all()
+        list_of_users_ratings = session.query(Ratings).filter(Ratings.movie_id == movie_id).all()
         items_users_ratings_matrix = create_items_users_ratings_matrix(list_of_users_ratings,
                                                                        number_of_users_with_calculated_similarity)
         # print(items_users_ratings_matrix)
@@ -42,7 +42,7 @@ def create_items_users_ratings_matrix(list_of_users_ratings, number_of_users_wit
     items_users_ratings_matrix = np.zeros((x, number_of_users_with_calculated_similarity))
     for user_rating in list_of_users_ratings:
         row_number = x - 1
-        column_number = user_rating.userId - 1
+        column_number = user_rating.user_id - 1
         users_rating_value = user_rating.rating
         items_users_ratings_matrix[row_number, column_number] = users_rating_value
     return items_users_ratings_matrix
@@ -53,8 +53,8 @@ def create_user_to_user_similarity_matrix(list_of_users_similarity, number_of_co
     user_user_similarity_matrix = np.zeros(
         (number_of_rows, number_of_columns))
     for users_similarity in list_of_users_similarity:
-        x_element_position = users_similarity.userId - 1
-        y_element_position = users_similarity.compareUserId - 1
+        x_element_position = users_similarity.user_id - 1
+        y_element_position = users_similarity.compare_user_id - 1
         users_similarity_value = users_similarity.similarity
         user_user_similarity_matrix[x_element_position, y_element_position] = users_similarity_value
     return user_user_similarity_matrix
@@ -89,7 +89,7 @@ def save_predictions(movie_id, rating_predictions):
 def save_prediction(user_id, movie_id, calculated_rating_prediction):
     session = Session()
     rating_prediction = session.query(RatingsPredictions) \
-        .filter(RatingsPredictions.userId == user_id, RatingsPredictions.movieId == movie_id).first()
+        .filter(RatingsPredictions.user_id == user_id, RatingsPredictions.movie_id == movie_id).first()
     if rating_prediction:
         rating_prediction.rating = round(calculated_rating_prediction, 1)
     else:
@@ -99,4 +99,3 @@ def save_prediction(user_id, movie_id, calculated_rating_prediction):
 
 if __name__ == "__main__":
     calculate_predicted_ratings_based_on_user_similarity()
-    # testY()

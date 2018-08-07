@@ -16,7 +16,7 @@ def top_score_movies(number_of_movies):
 
 def movie_jsonifier(obj):
     if isinstance(obj, Movies):
-        return {'movieId': obj.movieId, 'title': obj.title}
+        return {'movieId': obj.movie_id, 'title': obj.title}
     else:
         raise ValueError('%r is not JSON serializable' % obj)
 

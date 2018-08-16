@@ -39,7 +39,7 @@ class AverageMovieRating(Base):
 class UsersSimilarity(Base):
     """"""
     __tablename__ = "users_similarity"
-    users_similarity_id = Column(Integer, primary_key=True)
+    users_similarity_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, nullable=False)
     compare_user_id = Column(Integer, nullable=False)
     similarity = Column(Float, nullable=False)

@@ -1,60 +1,81 @@
-import numpy as np
 from scipy.spatial.distance import cosine
-from sqlalchemy import func
 
-from dataAccess import Session, Movies, User, Ratings
+from dataAccess import Session, Ratings
 from dataAccess.entities import UsersSimilarity
 
 
-def calculate_normalized_rating_vector(user_ratings, number_of_movies):
-    user_ratings_values_from_db = np.array(list(rating.rating for rating in user_ratings))
-    normalized_rating_factor = user_ratings_values_from_db.sum() / user_ratings_values_from_db.size
-    ratings_for_all_movies = np.zeros(number_of_movies)
-    for rating in user_ratings:
-        movie_id = rating.movie_id
-        normalized_rating = rating.rating - normalized_rating_factor
-        ratings_for_all_movies[movie_id - 1] = normalized_rating
+def calculate_users_similarity(ratings_list):
+    user_ids_to_movie_ratings = dict()
+    for rating in ratings_list:
+        if rating.user_id in user_ids_to_movie_ratings:
+            user_ids_to_movie_ratings[rating.user_id][rating.movie_id] = rating.rating
+        else:
+            user_ids_to_movie_ratings[rating.user_id] = dict([(rating.movie_id, rating.rating)])
+
+    clear_users_similarity_table()
+    session = Session()
+    user_similarities_ready_to_save = []
+    progress = 0
+    number_to_calculate = len(user_ids_to_movie_ratings)
+    for compared_user_id, list_of_compared_user_ratings in user_ids_to_movie_ratings.items():
+        for id_of_user_for_comparision, list_of_user_for_comparison_ratings in user_ids_to_movie_ratings.items():
+            if compared_user_id != id_of_user_for_comparision:
+                movie_ids_to_ratings_of_compared_user = dict()
+                movie_ids_to_ratings_of_user_for_comparison = dict()
+                prepare_vectors_for_comparison(list_of_compared_user_ratings, list_of_user_for_comparison_ratings,
+                                               movie_ids_to_ratings_of_compared_user,
+                                               movie_ids_to_ratings_of_user_for_comparison)
+
+                normalized_rating_for_compared_user = calculate_normalized_rating_vector(
+                    movie_ids_to_ratings_of_compared_user.values())
+                normalized_rating_for_user_for_comparision = calculate_normalized_rating_vector(
+                    movie_ids_to_ratings_of_user_for_comparison.values())
+                users_similarity = round(2 - cosine(normalized_rating_for_compared_user,
+                                                    normalized_rating_for_user_for_comparision), 3)
+
+                user_similarities_ready_to_save.append(
+                    {"user_id": compared_user_id, 'compare_user_id': id_of_user_for_comparision,
+                     'similarity': users_similarity})
+        session.bulk_insert_mappings(UsersSimilarity, user_similarities_ready_to_save)
+        session.commit()
+        user_similarities_ready_to_save.clear()
+        progress += 1
+        print('Progress: ', round(100 * (progress / number_to_calculate), 2), '%')
+
+
+def clear_users_similarity_table():
+    session = Session()
+    session.query(UsersSimilarity).delete()
+    session.commit()
+
+
+def prepare_vectors_for_comparison(list_of_compared_user_ratings, list_of_user_for_comparison_ratings,
+                                   movie_ids_to_ratings_of_compared_user, movie_ids_to_ratings_of_user_for_comparison):
+    for movie_id, movie_rating in list_of_compared_user_ratings.items():
+        movie_ids_to_ratings_of_compared_user[movie_id] = movie_rating
+        movie_ids_to_ratings_of_user_for_comparison[movie_id] = 0.0
+    for movie_id, movie_rating in list_of_user_for_comparison_ratings.items():
+        if movie_id in movie_ids_to_ratings_of_user_for_comparison:
+            movie_ids_to_ratings_of_user_for_comparison[movie_id] = movie_rating
+        else:
+            movie_ids_to_ratings_of_compared_user[movie_id] = 0.0
+            movie_ids_to_ratings_of_user_for_comparison[movie_id] = movie_rating
+
+
+def calculate_users_similarity_for_all_users():
+    session = Session()
+    ratings_list = session.query(Ratings)
+    calculate_users_similarity(ratings_list)
+
+
+def calculate_normalized_rating_vector(unnormalized_vector):
+    normalized_rating_factor = sum(unnormalized_vector) / len(unnormalized_vector)
+    ratings_for_all_movies = []
+    for rating in unnormalized_vector:
+        normalized_rating = rating - normalized_rating_factor
+        ratings_for_all_movies.append(normalized_rating)
     return ratings_for_all_movies
 
 
-def calculate_users_similarity():
-    session = Session()
-    # check how many movies there are, so you could know how big the comparision vector will be
-    number_of_movies = session.query(Movies).count()
-    number_of_users_to_process = session.query(User).count()
-    processed_user = 1
-
-    users_in_users_table = session.query(User).all()
-    list_of_users_ids_from_user_table = np.array(list(int(user.id) for user in users_in_users_table))
-
-    unique_users_in_ratings_table = session.query(Ratings.user_id).distinct()
-    list_of_users_ids_from_ratings_table = np.array(list(rating.user_id for rating in unique_users_in_ratings_table))
-
-    for x in list_of_users_ids_from_user_table:
-        for y in list_of_users_ids_from_ratings_table:
-            if x != y:
-                compared_user = session.query(Ratings).filter(Ratings.user_id == x).all()
-                user_for_comparision = session.query(Ratings).filter(Ratings.user_id == y).all()
-
-                if compared_user and user_for_comparision:
-                    normalized_rating_for_compared_user = \
-                        calculate_normalized_rating_vector(compared_user, number_of_movies)
-                    normalized_rating_for_user_for_comparision = calculate_normalized_rating_vector(
-                        user_for_comparision, number_of_movies)
-                    if any(normalized_rating_for_compared_user) and any(normalized_rating_for_user_for_comparision):
-                        similarity = round(2 - cosine(normalized_rating_for_compared_user,
-                                                      normalized_rating_for_user_for_comparision), 3)
-                        users_similarity = session.query(UsersSimilarity) \
-                            .filter(UsersSimilarity.user_id == x, UsersSimilarity.compare_user_id == y).first()
-                        if users_similarity:
-                            users_similarity.similarity = similarity
-                        else:
-                            users_similarity = UsersSimilarity(x, y, similarity)
-                            session.add(users_similarity)
-                        session.commit()
-        print("Processed user: ", processed_user, " from: ", int(number_of_users_to_process))
-        processed_user += 1
-
-
 if __name__ == "__main__":
-    calculate_users_similarity()
+    calculate_users_similarity_for_all_users()

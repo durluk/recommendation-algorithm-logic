@@ -7,13 +7,13 @@ from dataAccess.connect import connect
 
 
 class Ratings(object):
-    userId = None
-    movieId = None
+    user_id = None
+    movie_id = None
     rating = None
 
 
 class Movies(object):
-    movieId = None
+    movie_id = None
 
 
 class User(object):
@@ -40,4 +40,3 @@ moz_user = Table('user', metadata, autoload=True)
 mapper(User, moz_user)
 
 Session = sessionmaker(bind=engine)
-

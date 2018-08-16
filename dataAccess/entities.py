@@ -24,48 +24,48 @@ class Management(Base):
 
 class AverageMovieRating(Base):
     """"""
-    __tablename__ = "averageMovieRating"
+    __tablename__ = "average_movie_rating"
 
-    movieId = Column(Integer, primary_key=True)
-    averageRating = Column(Float, nullable=False)
+    movie_id = Column(Integer, primary_key=True)
+    average_rating = Column(Float, nullable=False)
 
     # ----------------------------------------------------------------------
-    def __init__(self, movieId, averageRating):
+    def __init__(self, movie_id, average_rating):
         """"""
-        self.movieId = movieId
-        self.averageRating = averageRating
+        self.movie_id = movie_id
+        self.average_rating = average_rating
 
 
 class UsersSimilarity(Base):
     """"""
-    __tablename__ = "usersSimilarity"
-    usersSimilarityId = Column(Integer, primary_key=True)
-    userId = Column(Integer, nullable=False)
-    compareUserId = Column(Integer, nullable=False)
+    __tablename__ = "users_similarity"
+    users_similarity_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False)
+    compare_user_id = Column(Integer, nullable=False)
     similarity = Column(Float, nullable=False)
-    UniqueConstraint(userId, compareUserId, name='users_similarity_ux_1')
+    UniqueConstraint(user_id, compare_user_id, name='users_similarity_ux_1')
 
     # ----------------------------------------------------------------------
-    def __init__(self, userId, compareUserId, similarity):
+    def __init__(self, user_id, compare_user_id, similarity):
         """"""
-        self.userId = userId
-        self.compareUserId = compareUserId
+        self.user_id = user_id
+        self.compare_user_id = compare_user_id
         self.similarity = similarity
 
 
 class RatingsPredictions(Base):
     """"""
-    __tablename__ = "ratingsPredictions"
-    userId = Column(Integer, primary_key=True)
-    movieId = Column(Integer, primary_key=True)
+    __tablename__ = "ratings_predictions"
+    user_id = Column(Integer, primary_key=True)
+    movie_id = Column(Integer, primary_key=True)
     rating = Column(Float, nullable=False)
-    UniqueConstraint(userId, movieId, name='ratings_predictions_ux_1')
+    UniqueConstraint(user_id, movie_id, name='ratings_predictions_ux_1')
 
     # ----------------------------------------------------------------------
-    def __init__(self, userId, movieId, rating):
+    def __init__(self, user_id, movie_id, rating):
         """"""
-        self.userId = userId
-        self.movieId = movieId
+        self.user_id = user_id
+        self.movie_id = movie_id
         self.rating = rating
 
 

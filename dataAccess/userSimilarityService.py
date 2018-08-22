@@ -1,16 +1,21 @@
+from math import isnan
 from scipy.spatial.distance import cosine
 
-from dataAccess import Session, Ratings
+from dataAccess import Session
 from dataAccess.entities import UsersSimilarity
 
 
 def calculate_users_similarity(ratings_list):
     user_ids_to_movie_ratings = dict()
-    for rating in ratings_list:
-        if rating.user_id in user_ids_to_movie_ratings:
-            user_ids_to_movie_ratings[rating.user_id][rating.movie_id] = rating.rating
+    processed_ratings = 0
+    for user_id, movie_id, rating in ratings_list:
+        processed_ratings += 1
+        if user_id in user_ids_to_movie_ratings:
+            user_ids_to_movie_ratings[user_id][movie_id] = rating
         else:
-            user_ids_to_movie_ratings[rating.user_id] = dict([(rating.movie_id, rating.rating)])
+            user_ids_to_movie_ratings[user_id] = dict([(movie_id, rating)])
+        if processed_ratings % 10000 == 0:
+            print('Mapping progress: ', processed_ratings / 1000, 'k')
 
     clear_users_similarity_table()
     session = Session()
@@ -30,8 +35,10 @@ def calculate_users_similarity(ratings_list):
                     movie_ids_to_ratings_of_compared_user.values())
                 normalized_rating_for_user_for_comparision = calculate_normalized_rating_vector(
                     movie_ids_to_ratings_of_user_for_comparison.values())
-                users_similarity = round(2 - cosine(normalized_rating_for_compared_user,
+                users_similarity = round(1 - cosine(normalized_rating_for_compared_user,
                                                     normalized_rating_for_user_for_comparision), 3)
+                if isnan(users_similarity):
+                    users_similarity = -1
 
                 user_similarities_ready_to_save.append(
                     {"user_id": compared_user_id, 'compare_user_id': id_of_user_for_comparision,
@@ -64,7 +71,7 @@ def prepare_vectors_for_comparison(list_of_compared_user_ratings, list_of_user_f
 
 def calculate_users_similarity_for_all_users():
     session = Session()
-    ratings_list = session.query(Ratings)
+    ratings_list = session.execute("SELECT user_id, movie_id, rating FROM ratings")
     calculate_users_similarity(ratings_list)
 
 

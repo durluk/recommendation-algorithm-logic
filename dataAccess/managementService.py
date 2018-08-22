@@ -32,6 +32,7 @@ def get_parameter(description):
 
 def save_required_parameters():
     save_parameter("minimum_number_of_ratings_for_average", 5)
+    save_parameter("similarity_range_factor", 0.5)
 
 
 if __name__ == "__main__":

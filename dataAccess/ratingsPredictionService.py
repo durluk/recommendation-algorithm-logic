@@ -21,12 +21,10 @@ def calculate_predicted_ratings_based_on_user_similarity(ratings_list, users_sim
     user_size = len(user_ids_to_real_position)
     movie_size = len(movie_ids_to_real_position)
     user_user_similarity_matrix = np.zeros((user_size, user_size))
-    similarity_range_factor = get_parameter("similarity_range_factor").value
     for user_id, compare_user_id, similarity in users_similarity_list:
         column_number = user_ids_to_real_position[user_id]
         row_number = user_ids_to_real_position[compare_user_id]
-        if similarity > similarity_range_factor:
-            user_user_similarity_matrix[row_number, column_number] = similarity
+        user_user_similarity_matrix[row_number, column_number] = similarity
     items_users_ratings_matrix = np.zeros((movie_size, user_size))
 
     for user_id, movie_id, rating in ratings_list:

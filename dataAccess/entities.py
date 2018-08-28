@@ -69,5 +69,21 @@ class RatingsPredictions(Base):
         self.rating = rating
 
 
+class RatingsPredictionsBySVD(Base):
+    """"""
+    __tablename__ = "ratings_predictions_by_svd"
+    user_id = Column(Integer, primary_key=True)
+    movie_id = Column(Integer, primary_key=True)
+    rating = Column(Float, nullable=False)
+    UniqueConstraint(user_id, movie_id, name='ratings_predictions_svd_1')
+
+    # ----------------------------------------------------------------------
+    def __init__(self, user_id, movie_id, rating):
+        """"""
+        self.user_id = user_id
+        self.movie_id = movie_id
+        self.rating = rating
+
+
 # create tables
 Base.metadata.create_all(engine)

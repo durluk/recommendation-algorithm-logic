@@ -2,7 +2,6 @@ import numpy as np
 
 from dataAccess import Session
 from dataAccess.entities import RatingsPredictions
-from dataAccess.managementService import get_parameter
 
 
 def calculate_predicted_ratings_based_on_user_similarity(ratings_list, users_similarity_list):
@@ -25,8 +24,10 @@ def calculate_predicted_ratings_based_on_user_similarity(ratings_list, users_sim
         column_number = user_ids_to_real_position[user_id]
         row_number = user_ids_to_real_position[compare_user_id]
         user_user_similarity_matrix[row_number, column_number] = similarity
-    items_users_ratings_matrix = np.zeros((movie_size, user_size))
 
+    items_users_ratings_matrix = np.zeros((movie_size, user_size))
+    session = Session()
+    ratings_list = session.execute("SELECT user_id, movie_id, rating FROM ratings")
     for user_id, movie_id, rating in ratings_list:
         column_number = user_ids_to_real_position[user_id]
         row_number = movie_ids_to_real_position[movie_id]
@@ -38,9 +39,8 @@ def calculate_predicted_ratings_based_on_user_similarity(ratings_list, users_sim
     inf_values = np.isinf(y)
     y[inf_values] = 0
     z = np.dot(unnormalized_predicted_ratings, y)
-
     clear_rating_predictions_table()
-    session = Session()
+
     predictions = []
     progress = 0
     number_to_calculate = len(user_ids_to_real_position)

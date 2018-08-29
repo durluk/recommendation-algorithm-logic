@@ -1,16 +1,14 @@
 import sys
+import csv
 
 import numpy as np
 import progressbar
 
 from dataAccess import Session, Ratings
-from dataAccess.entities import RatingsPredictionsBySVD
 
 session = Session()
 # Remove limit to use all ratings
-ratings_list = session.query(Ratings).limit(1000).all()
-session.query(RatingsPredictionsBySVD).delete()
-session.commit()
+ratings_list = session.query(Ratings).limit(10000).all()
 
 user_to_index = {}
 for rating in ratings_list:
@@ -81,14 +79,13 @@ ratings = []
 for user_id in progressbar.progressbar(user_to_index.keys()):
     for movie_id in movie_to_index.keys():
         predicted_rating = get_predicted_rating(S, V, U, user_id, movie_id)
-        ratings.append({
-            'user_id': user_id,
-            'movie_id': movie_id,
-            'rating': predicted_rating
-        })
+        ratings.append([user_id, movie_id, predicted_rating])
 
-session.bulk_insert_mappings(RatingsPredictionsBySVD, ratings)
-session.commit()
+
+with open('svd.csv', 'w', newline='') as myfile:
+    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    wr.writerows(ratings)
+
 
 
 

@@ -34,20 +34,20 @@ def calculate_predicted_ratings_based_on_user_similarity(ratings_list, users_sim
         items_users_ratings_matrix[row_number, column_number] = rating
 
     unnormalized_predicted_ratings = np.matmul(items_users_ratings_matrix, user_user_similarity_matrix)
-    absolute_sum_of_similarities = np.absolute(user_user_similarity_matrix.sum(axis=0))
-    y = np.diag(1 / absolute_sum_of_similarities)
-    inf_values = np.isinf(y)
-    y[inf_values] = 0
-    z = np.dot(unnormalized_predicted_ratings, y)
-    clear_rating_predictions_table()
 
+    items_users_ratings_matrix_value_as_1 = np.nonzero(items_users_ratings_matrix)
+    items_users_ratings_matrix[items_users_ratings_matrix_value_as_1] = 1
+
+    absolute_sum_of_similarities = np.matmul(items_users_ratings_matrix, user_user_similarity_matrix)
+    z = np.divide(unnormalized_predicted_ratings, absolute_sum_of_similarities)
+    clear_rating_predictions_table()
     predictions = []
     progress = 0
     number_to_calculate = len(user_ids_to_real_position)
     for user_id, user_real_position in user_ids_to_real_position.items():
         for movie_id, movie_real_position in movie_ids_to_real_position.items():
             predicted_rating = round(z[movie_real_position, user_real_position], 1)
-            if predicted_rating == 0:
+            if predicted_rating == 0 or np.isnan(predicted_rating):
                 average_movie_rating = session.execute(
                     "SELECT average_rating FROM average_movie_rating WHERE movie_id = :param_movie_id",
                     {'param_movie_id': movie_id}).fetchone()

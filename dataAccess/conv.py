@@ -8,7 +8,8 @@ from dataAccess.entities import RatingsPredictionsBySVD
 
 session = Session()
 # Remove limit to use all ratings
-ratings_list = session.query(Ratings).limit(1000).all()
+# ratings_list = session.query(Ratings).limit(1000).all()
+ratings_list = session.query(Ratings).all()
 session.query(RatingsPredictionsBySVD).delete()
 session.commit()
 

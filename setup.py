@@ -4,5 +4,5 @@ from setuptools import setup, find_packages
 
 setup(
 
-install_requires=['sqlalchemy', 'scipy', 'numpy', 'progressbar2'])
+install_requires=['sqlalchemy', 'scipy', 'numpy', 'progressbar2', 'psycopg2', 'connect'])
 
